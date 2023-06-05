@@ -1,2 +1,1 @@
-# demo-expense-claims
-Flows for APEX Demo Application - Expense Claims
+# Flows for APEX Demo Application - Expense Claims
