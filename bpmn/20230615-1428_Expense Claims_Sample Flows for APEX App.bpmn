@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:apex="https://flowsforapex.org" id="Definitions_1wzb475" targetNamespace="http://bpmn.io/schema/b" exporter="Flows for APEX" exporterVersion="22.2.0">
+  <bpmn:collaboration id="EXPENSE_CLAIMS">
+    <bpmn:participant id="COMPANY" name="Company" processRef="Process_0rxermh" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_0rxermh" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_0gyktks">
+      <bpmn:lane id="ACCOUNTANT" name="Accountant">
+        <bpmn:flowNodeRef>prepare_payment</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>execute_transaction</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>expense_repayed</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_0w2nonm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1ogvt63</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="EMPLOYEE" name="Employee">
+        <bpmn:flowNodeRef>correct_expense_claim</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>reminder_finished</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>remind_employee</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>outstanding_expenses</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_reminder</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="MANAGER" name="Manager">
+        <bpmn:flowNodeRef>inform_employee</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>check_status_mgr</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>review_expense_mgr</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>validate_expense</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="VICE_PRESIDENT" name="Vice President">
+        <bpmn:flowNodeRef>check_status_vp</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>review_expense_vp</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>check_amount</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:sequenceFlow id="Flow_0bk3hoe" sourceRef="inform_employee" targetRef="correct_expense_claim" />
+    <bpmn:sequenceFlow id="declined_vp" name="declined_vp" sourceRef="check_status_vp" targetRef="inform_employee" apex:sequence="10">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="plsqlFunctionBody" conditionType="plsqlFunctionBody">return expe_flow_expenseclaims.check_status(p_expe_id =&gt; flow_globals.business_ref, p_path =&gt; 'declined_vp'
+);</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="declined_mgr" name="declined_mgr" sourceRef="check_status_mgr" targetRef="inform_employee" apex:sequence="10">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="plsqlFunctionBody" conditionType="plsqlFunctionBody">return expe_flow_expenseclaims.check_status(p_expe_id =&gt; flow_globals.business_ref, p_path =&gt; 'declined_mgr'
+);</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1efvawm" sourceRef="review_expense_mgr" targetRef="check_status_mgr" />
+    <bpmn:sequenceFlow id="approved_mgr" name="approved_mgr" sourceRef="check_status_mgr" targetRef="check_amount" apex:sequence="20">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="plsqlFunctionBody" conditionType="plsqlFunctionBody">return expe_flow_expenseclaims.check_status(p_expe_id =&gt; flow_globals.business_ref, p_path =&gt; 'approved_mgr'
+);</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="approved_vp" name="approved_vp" sourceRef="check_status_vp" targetRef="prepare_payment" apex:sequence="20">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="plsqlFunctionBody" conditionType="plsqlFunctionBody">return expe_flow_expenseclaims.check_status(p_expe_id =&gt; flow_globals.business_ref, p_path =&gt; 'approved_vp'
+);</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="yes_vp" name="yes" sourceRef="check_amount" targetRef="review_expense_vp" apex:sequence="10">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="plsqlExpression" conditionType="plsqlFunctionBody">expe_flow_expenseclaims.check_limit_exceeded(p_expe_id =&gt; flow_globals.business_ref)</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0xlx5tc" sourceRef="review_expense_vp" targetRef="check_status_vp" />
+    <bpmn:userTask id="prepare_payment" name="Prepare payment" apex:type="apexPage" apex:manualInput="true">
+      <bpmn:documentation>https://flowsforapex.org/latest/tasks/#2-bpmnusertask---calls-an-apex-page</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:apexPage>
+          <apex:pageId></apex:pageId>
+        </apex:apexPage>
+      </bpmn:extensionElements>
+      <bpmn:incoming>approved_vp</bpmn:incoming>
+      <bpmn:incoming>no_vp</bpmn:incoming>
+      <bpmn:incoming>Flow_1s3ril2</bpmn:incoming>
+      <bpmn:outgoing>Flow_0dqh2l0</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_0dqh2l0" sourceRef="prepare_payment" targetRef="execute_transaction" />
+    <bpmn:sequenceFlow id="no_vp" name="no" sourceRef="check_amount" targetRef="prepare_payment" apex:sequence="20" />
+    <bpmn:exclusiveGateway id="check_status_vp" name="Status?">
+      <bpmn:documentation>https://flowsforapex.org/latest/gateways/#exclusive-gateways-xor</bpmn:documentation>
+      <bpmn:incoming>Flow_0xlx5tc</bpmn:incoming>
+      <bpmn:outgoing>declined_vp</bpmn:outgoing>
+      <bpmn:outgoing>approved_vp</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="inform_employee" name="Inform employee" apex:type="sendMail" apex:manualInput="true">
+      <bpmn:documentation>https://flowsforapex.org/latest/tasks/#4-bpmnservicetask---for-running-external-services</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:sendMail>
+          <apex:emailFrom>info@flowsforapex.org</apex:emailFrom>
+          <apex:emailTo>&amp;F4A$MAILTO.</apex:emailTo>
+          <apex:useTemplate>true</apex:useTemplate>
+          <apex:applicationId>&amp;F4A$APPLICATION_ID.</apex:applicationId>
+          <apex:templateId>ADVISE_EMPLOYEE</apex:templateId>
+          <apex:placeholder>{
+ "EXPE_COMMENT_MGR": "&amp;F4A$EXPE_COMMENT_MGR.",
+ "EXPE_COMMENT_VP": "&amp;F4A$EXPE_COMMENT_VP.",
+ "EXPE_PURPOSE": "&amp;F4A$EXPE_PURPOSE."
+}</apex:placeholder>
+          <apex:immediately>true</apex:immediately>
+        </apex:sendMail>
+        <apex:beforeTask>
+          <apex:processVariable>
+            <apex:varSequence>0</apex:varSequence>
+            <apex:varName>expe_comment_mgr</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>plsqlFunctionBody</apex:varExpressionType>
+            <apex:varExpression>return expe_flow_expenseclaims.get_expe_comment_mgr;</apex:varExpression>
+          </apex:processVariable>
+          <apex:processVariable>
+            <apex:varSequence>1</apex:varSequence>
+            <apex:varName>expe_comment_vp</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>plsqlFunctionBody</apex:varExpressionType>
+            <apex:varExpression>return expe_flow_expenseclaims.get_expe_comment_vp;</apex:varExpression>
+          </apex:processVariable>
+          <apex:processVariable>
+            <apex:varSequence>2</apex:varSequence>
+            <apex:varName>expe_purpose</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>plsqlFunctionBody</apex:varExpressionType>
+            <apex:varExpression>return expe_flow_expenseclaims.get_expe_purpose;</apex:varExpression>
+          </apex:processVariable>
+          <apex:processVariable>
+            <apex:varSequence>3</apex:varSequence>
+            <apex:varName>mailto</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>plsqlFunctionBody</apex:varExpressionType>
+            <apex:varExpression>return expe_flow_expenseclaims.get_mailto;</apex:varExpression>
+          </apex:processVariable>
+        </apex:beforeTask>
+      </bpmn:extensionElements>
+      <bpmn:incoming>declined_vp</bpmn:incoming>
+      <bpmn:incoming>declined_mgr</bpmn:incoming>
+      <bpmn:outgoing>Flow_0bk3hoe</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="review_expense_vp" name="Review expense" apex:type="apexPage" apex:manualInput="true">
+      <bpmn:documentation>https://flowsforapex.org/latest/tasks/#2-bpmnusertask---calls-an-apex-page</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:apexPage>
+          <apex:applicationId></apex:applicationId>
+          <apex:pageId>8</apex:pageId>
+          <apex:pageItems>
+            <apex:pageItem>
+              <apex:itemName>P8_EXPE_ID</apex:itemName>
+              <apex:itemValue>&amp;F4A$BUSINESS_REF.</apex:itemValue>
+            </apex:pageItem>
+            <apex:pageItem>
+              <apex:itemName>PROCESS_ID</apex:itemName>
+              <apex:itemValue>&amp;F4A$PROCESS_ID.</apex:itemValue>
+            </apex:pageItem>
+            <apex:pageItem>
+              <apex:itemName>SUBFLOW_ID</apex:itemName>
+              <apex:itemValue>&amp;F4A$SUBFLOW_ID.</apex:itemValue>
+            </apex:pageItem>
+            <apex:pageItem>
+              <apex:itemName>STEP_KEY</apex:itemName>
+              <apex:itemValue>&amp;F4A$STEP_KEY.</apex:itemValue>
+            </apex:pageItem>
+          </apex:pageItems>
+        </apex:apexPage>
+      </bpmn:extensionElements>
+      <bpmn:incoming>yes_vp</bpmn:incoming>
+      <bpmn:outgoing>Flow_0xlx5tc</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="check_amount" name="Expense limit exceeded?" default="no_vp">
+      <bpmn:documentation>https://flowsforapex.org/latest/gateways/#exclusive-gateways-xor</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:beforeSplit />
+      </bpmn:extensionElements>
+      <bpmn:incoming>approved_mgr</bpmn:incoming>
+      <bpmn:outgoing>yes_vp</bpmn:outgoing>
+      <bpmn:outgoing>no_vp</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="check_status_mgr" name="Status?">
+      <bpmn:documentation>https://flowsforapex.org/latest/gateways/#exclusive-gateways-xor</bpmn:documentation>
+      <bpmn:incoming>Flow_1efvawm</bpmn:incoming>
+      <bpmn:outgoing>approved_mgr</bpmn:outgoing>
+      <bpmn:outgoing>declined_mgr</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="review_expense_mgr" name="Review expense" apex:type="apexPage" apex:manualInput="true">
+      <bpmn:documentation>https://flowsforapex.org/latest/tasks/#2-bpmnusertask---calls-an-apex-page</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:apexPage>
+          <apex:applicationId></apex:applicationId>
+          <apex:pageId>5</apex:pageId>
+          <apex:pageItems>
+            <apex:pageItem>
+              <apex:itemName>P5_EXPE_ID</apex:itemName>
+              <apex:itemValue>&amp;F4A$BUSINESS_REF.</apex:itemValue>
+            </apex:pageItem>
+            <apex:pageItem>
+              <apex:itemName>PROCESS_ID</apex:itemName>
+              <apex:itemValue>&amp;F4A$PROCESS_ID.</apex:itemValue>
+            </apex:pageItem>
+            <apex:pageItem>
+              <apex:itemName>SUBFLOW_ID</apex:itemName>
+              <apex:itemValue>&amp;F4A$SUBFLOW_ID.</apex:itemValue>
+            </apex:pageItem>
+            <apex:pageItem>
+              <apex:itemName>STEP_KEY</apex:itemName>
+              <apex:itemValue>&amp;F4A$STEP_KEY.</apex:itemValue>
+            </apex:pageItem>
+          </apex:pageItems>
+        </apex:apexPage>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0tuazn9</bpmn:incoming>
+      <bpmn:outgoing>Flow_1efvawm</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:businessRuleTask id="validate_expense" name="Validate expense" apex:type="executePlsql">
+      <bpmn:documentation>https://flowsforapex.org/latest/tasks/#6-bpmnbusinessRuleTask---for-automated-decision-making</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:executePlsql>
+          <apex:plsqlCode>expe_flow_expenseclaims.validate_expense;</apex:plsqlCode>
+        </apex:executePlsql>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0ri9uc3</bpmn:incoming>
+      <bpmn:incoming>Flow_04bnc24</bpmn:incoming>
+      <bpmn:outgoing>Flow_0tuazn9</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:sequenceFlow id="Flow_0tuazn9" sourceRef="validate_expense" targetRef="review_expense_mgr" />
+    <bpmn:sequenceFlow id="Flow_0ri9uc3" sourceRef="correct_expense_claim" targetRef="validate_expense" />
+    <bpmn:userTask id="correct_expense_claim" name="Correct expense claim" apex:type="apexPage" apex:manualInput="true">
+      <bpmn:documentation>https://flowsforapex.org/latest/tasks/#2-bpmnusertask---calls-an-apex-page</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:apexPage>
+          <apex:applicationId></apex:applicationId>
+          <apex:pageId>2</apex:pageId>
+          <apex:pageItems>
+            <apex:pageItem>
+              <apex:itemName>PROCESS_ID</apex:itemName>
+              <apex:itemValue>&amp;F4A$PROCESS_ID.</apex:itemValue>
+            </apex:pageItem>
+            <apex:pageItem>
+              <apex:itemName>SUBFLOW_ID</apex:itemName>
+              <apex:itemValue>&amp;F4A$SUBFLOW_ID.</apex:itemValue>
+            </apex:pageItem>
+            <apex:pageItem>
+              <apex:itemName>STEP_KEY</apex:itemName>
+              <apex:itemValue>&amp;F4A$STEP_KEY.</apex:itemValue>
+            </apex:pageItem>
+            <apex:pageItem>
+              <apex:itemName>P2_EXPE_ID</apex:itemName>
+              <apex:itemValue>&amp;F4A$BUSINESS_REF.</apex:itemValue>
+            </apex:pageItem>
+          </apex:pageItems>
+        </apex:apexPage>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0bk3hoe</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ri9uc3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:boundaryEvent id="Event_reminder" cancelActivity="false" attachedToRef="correct_expense_claim">
+      <bpmn:extensionElements>
+        <apex:beforeEvent>
+          <apex:processVariable>
+            <apex:varSequence>0</apex:varSequence>
+            <apex:varName>Event_reminder:applicationid</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>processVariable</apex:varExpressionType>
+            <apex:varExpression>application_id</apex:varExpression>
+          </apex:processVariable>
+          <apex:processVariable>
+            <apex:varSequence>1</apex:varSequence>
+            <apex:varName>Event_reminder:pageid</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>static</apex:varExpressionType>
+            <apex:varExpression>2</apex:varExpression>
+          </apex:processVariable>
+          <apex:processVariable>
+            <apex:varSequence>2</apex:varSequence>
+            <apex:varName>Event_reminder:username</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>plsqlFunctionBody</apex:varExpressionType>
+            <apex:varExpression>return expe_flow_expenseclaims.get_expe_submitted_by;</apex:varExpression>
+          </apex:processVariable>
+        </apex:beforeEvent>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_10sej1q</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_10mmywj" apex:timerType="oracleCycle">
+        <bpmn:extensionElements>
+          <apex:oracleCycle>
+            <apex:startIntervalDS>000 00:00:30</apex:startIntervalDS>
+            <apex:repeatIntervalDS>000 00:00:30</apex:repeatIntervalDS>
+            <apex:maxRuns>2</apex:maxRuns>
+          </apex:oracleCycle>
+        </bpmn:extensionElements>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_10sej1q" sourceRef="Event_reminder" targetRef="remind_employee" />
+    <bpmn:endEvent id="reminder_finished" name="Reminder finished">
+      <bpmn:documentation>https://flowsforapex.org/latest/start-and-stop-events/#end-event</bpmn:documentation>
+      <bpmn:incoming>Flow_1qlxino</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1qlxino" sourceRef="remind_employee" targetRef="reminder_finished" />
+    <bpmn:serviceTask id="remind_employee" name="Remind employee" apex:type="sendMail" apex:manualInput="true">
+      <bpmn:documentation>https://flowsforapex.org/latest/tasks/#4-bpmnservicetask---for-running-external-services</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:sendMail>
+          <apex:emailFrom>info@flowsforapex.org</apex:emailFrom>
+          <apex:emailTo>&amp;F4A$MAILTO.</apex:emailTo>
+          <apex:useTemplate>true</apex:useTemplate>
+          <apex:applicationId>&amp;F4A$APPLICATION_ID.</apex:applicationId>
+          <apex:templateId>ADVISE_EMPLOYEE</apex:templateId>
+          <apex:placeholder>{
+ "EXPE_COMMENT_MGR": "&amp;F4A$EXPE_COMMENT_MGR.",
+ "EXPE_COMMENT_VP": "&amp;F4A$EXPE_COMMENT_VP.",
+ "EXPE_PURPOSE": "&amp;F4A$EXPE_PURPOSE."
+}</apex:placeholder>
+          <apex:immediately>true</apex:immediately>
+        </apex:sendMail>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_10sej1q</bpmn:incoming>
+      <bpmn:outgoing>Flow_1qlxino</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_04bnc24" sourceRef="outstanding_expenses" targetRef="validate_expense" />
+    <bpmn:startEvent id="outstanding_expenses" name="Submitted expense claim">
+      <bpmn:documentation>https://flowsforapex.org/latest/start-and-stop-events/#start-event</bpmn:documentation>
+      <bpmn:outgoing>Flow_04bnc24</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:callActivity id="execute_transaction" name="Execute transaction" apex:manualInput="false" apex:calledDiagram="Bank Transaction" apex:calledDiagramVersionSelection="latestVersion">
+      <bpmn:documentation>https://flowsforapex.org/latest/tasks/#3-bpmnscripttask---runs-a-plsql-script</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:inVariables>
+          <apex:processVariable>
+            <apex:varSequence>0</apex:varSequence>
+            <apex:varName>amount</apex:varName>
+            <apex:varDataType>NUMBER</apex:varDataType>
+            <apex:varExpressionType>processVariable</apex:varExpressionType>
+            <apex:varExpression>amount</apex:varExpression>
+          </apex:processVariable>
+          <apex:processVariable>
+            <apex:varSequence>1</apex:varSequence>
+            <apex:varName>account</apex:varName>
+            <apex:varDataType>NUMBER</apex:varDataType>
+            <apex:varExpressionType>processVariable</apex:varExpressionType>
+            <apex:varExpression>account</apex:varExpression>
+          </apex:processVariable>
+          <apex:processVariable>
+            <apex:varSequence>2</apex:varSequence>
+            <apex:varName>payment_method</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>processVariable</apex:varExpressionType>
+            <apex:varExpression>payment_method</apex:varExpression>
+          </apex:processVariable>
+        </apex:inVariables>
+        <apex:outVariables>
+          <apex:processVariable>
+            <apex:varSequence>0</apex:varSequence>
+            <apex:varName>status</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>processVariable</apex:varExpressionType>
+            <apex:varExpression>status</apex:varExpression>
+          </apex:processVariable>
+          <apex:processVariable>
+            <apex:varSequence>1</apex:varSequence>
+            <apex:varName>status_message</apex:varName>
+            <apex:varDataType>VARCHAR2</apex:varDataType>
+            <apex:varExpressionType>processVariable</apex:varExpressionType>
+            <apex:varExpression>status_message</apex:varExpression>
+          </apex:processVariable>
+        </apex:outVariables>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0dqh2l0</bpmn:incoming>
+      <bpmn:outgoing>Flow_05u2r53</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:sequenceFlow id="Flow_05u2r53" sourceRef="execute_transaction" targetRef="Activity_1ogvt63" />
+    <bpmn:sequenceFlow id="Flow_1s3ril2" sourceRef="Gateway_0w2nonm" targetRef="prepare_payment" apex:sequence="20">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="plsqlExpression">:F4A$STATUS = 'paid_error'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0ju1r34" name="paid" sourceRef="Gateway_0w2nonm" targetRef="expense_repayed" apex:sequence="10">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="plsqlExpression" sequence="10">:F4A$STATUS = 'paid'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:endEvent id="expense_repayed" name="Expense&#10;repayed">
+      <bpmn:documentation>https://flowsforapex.org/latest/start-and-stop-events/#end-event</bpmn:documentation>
+      <bpmn:incoming>Flow_0ju1r34</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0iarpe3" sourceRef="Activity_1ogvt63" targetRef="Gateway_0w2nonm" />
+    <bpmn:exclusiveGateway id="Gateway_0w2nonm" name="Status?">
+      <bpmn:extensionElements>
+        <apex:beforeSplit />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0iarpe3</bpmn:incoming>
+      <bpmn:outgoing>Flow_1s3ril2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0ju1r34</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="Activity_1ogvt63" name="Set status" apex:type="executePlsql">
+      <bpmn:documentation>https://flowsforapex.org/latest/tasks/#3-bpmnscripttask---runs-a-plsql-script</bpmn:documentation>
+      <bpmn:extensionElements>
+        <apex:executePlsql>
+          <apex:plsqlCode>expe_flow_expenseclaims.set_status
+( p_expe_status =&gt; '&amp;F4A$status.'
+, p_expe_paymentprovider_message =&gt; '&amp;F4A$status_message.'
+);</apex:plsqlCode>
+        </apex:executePlsql>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_05u2r53</bpmn:incoming>
+      <bpmn:outgoing>Flow_0iarpe3</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:textAnnotation id="TextAnnotation_1gl3ri4">
+      <bpmn:text>Fires 2 times, each after 30 seconds.
+For this to work, a timer job needs to be installed
+(see script enable_timers.sql in the software distribution)</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_0su6iuv" sourceRef="Event_reminder" targetRef="TextAnnotation_1gl3ri4" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="EXPENSE_CLAIMS">
+      <bpmndi:BPMNShape id="Participant_09irzjq_di" bpmnElement="COMPANY" isHorizontal="true">
+        <dc:Bounds x="-235" y="-160" width="1325" height="750" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1gingbv_di" bpmnElement="VICE_PRESIDENT" isHorizontal="true">
+        <dc:Bounds x="-205" y="200" width="1295" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_19sp5nm_di" bpmnElement="MANAGER" isHorizontal="true">
+        <dc:Bounds x="-205" y="80" width="1295" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1ahdn85_di" bpmnElement="EMPLOYEE" isHorizontal="true">
+        <dc:Bounds x="-205" y="-160" width="1295" height="240" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_09jdnig_di" bpmnElement="ACCOUNTANT" isHorizontal="true">
+        <dc:Bounds x="-205" y="320" width="1295" height="270" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0iarpe3_di" bpmnElement="Flow_0iarpe3">
+        <di:waypoint x="890" y="380" />
+        <di:waypoint x="925" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ju1r34_di" bpmnElement="Flow_0ju1r34">
+        <di:waypoint x="975" y="380" />
+        <di:waypoint x="1022" y="380" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="973" y="363" width="21" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1s3ril2_di" bpmnElement="Flow_1s3ril2">
+        <di:waypoint x="950" y="405" />
+        <di:waypoint x="950" y="460" />
+        <di:waypoint x="560" y="460" />
+        <di:waypoint x="560" y="420" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="730" y="442" width="51" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_05u2r53_di" bpmnElement="Flow_05u2r53">
+        <di:waypoint x="750" y="380" />
+        <di:waypoint x="790" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_04bnc24_di" bpmnElement="Flow_04bnc24">
+        <di:waypoint x="-30" y="-2" />
+        <di:waypoint x="-30" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1qlxino_di" bpmnElement="Flow_1qlxino">
+        <di:waypoint x="370" y="-100" />
+        <di:waypoint x="422" y="-100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10sej1q_di" bpmnElement="Flow_10sej1q">
+        <di:waypoint x="200" y="-38" />
+        <di:waypoint x="200" y="-100" />
+        <di:waypoint x="270" y="-100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ri9uc3_di" bpmnElement="Flow_0ri9uc3">
+        <di:waypoint x="150" y="20" />
+        <di:waypoint x="-30" y="20" />
+        <di:waypoint x="-30" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0tuazn9_di" bpmnElement="Flow_0tuazn9">
+        <di:waypoint x="20" y="140" />
+        <di:waypoint x="40" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0lm9zka_di" bpmnElement="no_vp">
+        <di:waypoint x="250" y="285" />
+        <di:waypoint x="250" y="380" />
+        <di:waypoint x="510" y="380" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="259" y="293" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0dqh2l0_di" bpmnElement="Flow_0dqh2l0">
+        <di:waypoint x="610" y="380" />
+        <di:waypoint x="650" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0xlx5tc_di" bpmnElement="Flow_0xlx5tc">
+        <di:waypoint x="410" y="260" />
+        <di:waypoint x="445" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_06c3by6_di" bpmnElement="yes_vp">
+        <di:waypoint x="275" y="260" />
+        <di:waypoint x="310" y="260" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="274" y="238" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1gl4y6n_di" bpmnElement="approved_vp">
+        <di:waypoint x="470" y="285" />
+        <di:waypoint x="470" y="380" />
+        <di:waypoint x="510" y="380" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="477" y="293" width="64" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1gxle5l_di" bpmnElement="approved_mgr">
+        <di:waypoint x="190" y="165" />
+        <di:waypoint x="190" y="260" />
+        <di:waypoint x="225" y="260" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="197" y="173" width="72" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1efvawm_di" bpmnElement="Flow_1efvawm">
+        <di:waypoint x="140" y="140" />
+        <di:waypoint x="165" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0dwfl3i_di" bpmnElement="declined_mgr">
+        <di:waypoint x="215" y="140" />
+        <di:waypoint x="420" y="140" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="220" y="123" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1rpes79_di" bpmnElement="declined_vp">
+        <di:waypoint x="470" y="235" />
+        <di:waypoint x="470" y="180" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="480" y="213" width="59" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0bk3hoe_di" bpmnElement="Flow_0bk3hoe">
+        <di:waypoint x="470" y="100" />
+        <di:waypoint x="470" y="20" />
+        <di:waypoint x="250" y="20" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Activity_12xnuja_di" bpmnElement="prepare_payment">
+        <dc:Bounds x="510" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0c42yx5_di" bpmnElement="check_status_vp" isMarkerVisible="true">
+        <dc:Bounds x="445" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="421" y="227" width="38" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_14f8b3n_di" bpmnElement="inform_employee">
+        <dc:Bounds x="420" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_14w19sg_di" bpmnElement="review_expense_vp">
+        <dc:Bounds x="310" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1a0ao33_di" bpmnElement="check_amount" isMarkerVisible="true">
+        <dc:Bounds x="225" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="217" y="206" width="66" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1hvxsqi_di" bpmnElement="check_status_mgr" isMarkerVisible="true">
+        <dc:Bounds x="165" y="115" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="171" y="93" width="38" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_04naoqg_di" bpmnElement="review_expense_mgr">
+        <dc:Bounds x="40" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0dgnjfr_di" bpmnElement="validate_expense">
+        <dc:Bounds x="-80" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1td3pfr_di" bpmnElement="correct_expense_claim">
+        <dc:Bounds x="150" y="-20" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1bfl035_di" bpmnElement="reminder_finished">
+        <dc:Bounds x="422" y="-118" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="396" y="-75" width="89" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0pc7wi4_di" bpmnElement="remind_employee">
+        <dc:Bounds x="270" y="-140" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0akd8ya_di" bpmnElement="outstanding_expenses">
+        <dc:Bounds x="-48" y="-38" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="-66" y="-75.5" width="71" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0n2lmzg_di" bpmnElement="execute_transaction">
+        <dc:Bounds x="650" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_150kmkh_di" bpmnElement="expense_repayed">
+        <dc:Bounds x="1022" y="362" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1019" y="326" width="43" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0w2nonm_di" bpmnElement="Gateway_0w2nonm" isMarkerVisible="true">
+        <dc:Bounds x="925" y="355" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="931" y="333" width="38" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0spnbvg_di" bpmnElement="Activity_1ogvt63">
+        <dc:Bounds x="790" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_1gl3ri4_di" bpmnElement="TextAnnotation_1gl3ri4">
+        <dc:Bounds x="270" y="-48" width="350" height="55" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1mx3s87_di" bpmnElement="Event_reminder">
+        <dc:Bounds x="182" y="-38" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_0su6iuv_di" bpmnElement="Association_0su6iuv">
+        <di:waypoint x="218" y="-22" />
+        <di:waypoint x="270" y="-27" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
