@@ -66,17 +66,17 @@
         </apex:messageName>
         <apex:correlationKey>
           <apex:expressionType>static</apex:expressionType>
-          <apex:expression>CompanyID</apex:expression>
+          <apex:expression>PaymentID</apex:expression>
         </apex:correlationKey>
         <apex:correlationValue>
-          <apex:expressionType>static</apex:expressionType>
-          <apex:expression>4598458954389</apex:expression>
+          <apex:expressionType>processVariable</apex:expressionType>
+          <apex:expression>BUSINESS_REF</apex:expression>
         </apex:correlationValue>
         <apex:payload>
           <apex:expressionType>static</apex:expressionType>
-          <apex:expression>{ "bankaccount": 453298523
-, "amount": 464
-, "paymentref": 347842
+          <apex:expression>{ "bankaccount": &amp;F4A$ACCOUNT. 
+, "amount": &amp;F4A$AMOUNT. 
+, "paymentref": &amp;F4A$BUSINESS_REF. 
 }</apex:expression>
         </apex:payload>
       </bpmn:extensionElements>
@@ -106,8 +106,8 @@
           <apex:expression>PaymentReference</apex:expression>
         </apex:correlationKey>
         <apex:correlationValue>
-          <apex:expressionType>static</apex:expressionType>
-          <apex:expression>347842</apex:expression>
+          <apex:expressionType>processVariable</apex:expressionType>
+          <apex:expression>BUSINESS_REF</apex:expression>
         </apex:correlationValue>
         <apex:payloadVariable>PaymentOutcome</apex:payloadVariable>
         <apex:afterTask>
